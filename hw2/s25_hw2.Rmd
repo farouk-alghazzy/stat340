@@ -1,0 +1,280 @@
+---
+title: "Homework 2 - Farouk Alghazzy"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo=T,eval=T,message=F,warning=F,fig.align='center')
+library(tidyverse)
+```
+
+## 1. Independence of Events <small>(8 points, 2 points each)</small>
+
+A fair four-sided die (numbered 1,2,3 and 4) is rolled three times. Consider the following four events:
+
+A: "The sum is 6 or less"
+
+B: "The second roll is more than the first"
+
+C: "The sum is odd"
+
+D: "Exactly two of the rolls are the same"
+```{r}
+q = expand.grid(1:4, 1:4, 1:4)
+
+qa = q %>%
+  mutate(sum = Var1 + Var2 + Var3) %>%
+  filter(sum <= 6) %>%
+  count()
+  
+qa_prob = qa$n/64
+
+qb = q %>%
+  mutate(sum = Var1 + Var2 + Var3) %>%
+  filter(Var1 > Var2) %>%
+  count()
+
+qb_prob = qb$n/64
+
+qc = q %>%
+  mutate(sum = Var1 + Var2 + Var3) %>%
+  filter(sum == 3 | sum == 5 | sum == 7 | sum == 9 | sum == 11) %>%
+  count()
+  
+qc_prob = qc$n/64
+
+qd = q %>%
+  mutate(sum = Var1 + Var2 + Var3) %>%
+  filter(Var1 == Var2 | Var1 == Var3 | Var2 == Var3) %>%
+  filter(!(Var1 == Var2 & Var2 == Var3)) %>%
+  count() 
+  
+qd_prob = qd$n/64
+```
+a. Are A and B independent?
+```{r}
+qa1 = q %>%
+  mutate(sum = Var1 + Var2 + Var3) %>%
+  filter(sum <= 6) %>%
+  filter(Var1 > Var2) %>%
+  count()
+
+qa1_prob_a = qa1$n/64
+qa1_prob_a
+
+qa1_prob_b = qa_prob * qb_prob
+qa1_prob_b
+#A and B are not independent because they have different probabilities.
+```
+
+b. Are C and D independent?
+```{r}
+qb1 = q %>%
+  mutate(sum = Var1 + Var2 + Var3) %>%
+  filter(sum == 3 | sum == 5 | sum == 7 | sum == 9 | sum == 11) %>%
+  filter(Var1 == Var2 | Var1 == Var3 | Var2 == Var3) %>%
+  filter(!(Var1 == Var2 & Var2 == Var3)) %>%
+  count() 
+
+qb1_prob_a = qb1$n/64
+qb1_prob_a
+
+qb1_prob_b = qc_prob * qd_prob
+qb1_prob_b
+# C and D are independent, because their probabilities are the same.
+```
+
+c. Are B and C independent?
+```{r}
+qb = q %>%
+  filter(Var2 > Var1) %>%
+  count()
+qb_prob = qb$n / 64
+qc = q %>%
+  mutate(sum = Var1 + Var2 + Var3) %>%
+  filter(sum %% 2 == 1) %>%
+  count()
+qc_prob = qc$n / 64
+qc1 = q %>%
+  mutate(sum = Var1 + Var2 + Var3) %>%
+  filter(Var2 > Var1) %>%
+  filter(sum %% 2 == 1) %>%
+  count()
+
+qc1_prob_a = qc1$n / 64
+qc1_prob_b = qb_prob * qc_prob
+
+qc1_prob_a
+qc1_prob_b
+#B and C are independent because they share the same individual probabilities.
+```
+
+d. Are B and D independent?
+```{r}
+qd1 = q %>%
+  mutate(sum = Var1 + Var2 + Var3) %>%
+  filter(Var1 > Var2) %>%
+  filter(Var1 == Var2 | Var1 == Var3 | Var2 == Var3) %>%
+  filter(!(Var1 == Var2 & Var2 == Var3)) %>%
+  count()
+
+qd1_prob_a = qd1$n/64
+qd1_prob_a
+
+qd1_prob_b = qb_prob * qd_prob
+qd1_prob_b
+#B and D are not independent because they don't share the same probabilities.
+```
+
+
+## 2. Stock Portfolio <small>(8 points, 2 points each)</small>
+
+Consider two stocks. Stock A has a mean annual return of 0.07 and a standard deviation of 0.015. Stock B has a mean annual return of 0.15 and a standard deviation of 0.07. Past data suggests that the prices have a correlation of -0.75.
+You have \$1000 to invest in a portfolio composed of these two stocks. 
+
+a. Suppose you invest \$500 in stock A and \$500 in stock B. What will be the expected return and the standard deviation of your portfolio (in dollars)? 
+*Hint:* $\text{SD}(aX+bY) = \sqrt{\text{Var}(aX+bY)}= \sqrt{a^2\text{Var}(X)+2ab\text{Cov}(X,Y)+b^2\text{Var}(Y)}$ and $\text{Cov}(X,Y)=\sigma_X \sigma_Y \rho_{XY}$
+```{r}
+return1 = .07 * 500
+return2 = .15 * 500
+x = return1 + return2
+x
+```
+```{r}
+cov = (-.75)*(.015*.07)
+return_std = sqrt((500*500)*(0.015*0.015) + (500*500)*(0.07*0.07) + 2*500*500*cov)
+return_std
+```
+
+
+b. Give an expression for the standard deviation for a portfolio investing $\$x$ in stock A and $\$1000-x$ in stock B. 
+```{r}
+std = sqrt(x^2)*(.015^2)+ ((1000-x)*(1000-x)*(0.07^2)) + ((2)*(x)*(1000-x)*cov)
+```
+
+c. Find the value $x$ that minimizes this standard deviation. 
+```{r}
+minimize = function(x) {
+  sqrt(x^2 * .015^2 + (1000-x) * .07^2 + (2 * x * (1000-x) * (-.75 * .07*.015)))
+}
+minimizer = optimize(minimize, interval = c(0,1000))[1]
+minimizer
+```
+
+d. What is the expected return and standard deviation (in dollars) for the portfolio split you chose in part c?
+```{r}
+return_a = 0.07 * 874.6097
+return_b = 0.015 * (1000-874.6097)
+return_ab = return_a + return_b
+return_ab
+```
+
+```{r}
+#STD
+x = 874.60971
+cov = (-0.75) * (0.015 * 0.07)
+return_std = sqrt(x^2 * 0.015 * 0.015 + (1000-x)^2 * 0.07 * 0.07 + (2 * x * (1000-x) * cov))
+return_std
+```
+
+
+## 3. Mousetrap: A Rube Goldberg Machine  <small>(5 points, 1 points each)</small>
+
+Consider the board game [Mousetrap](https://youtu.be/fOyq6Nc8660?si=WFJ-ldFsqsxg0Khx). When you trigger the trap, the ball needs to 
+
+1. roll down a **ramp**,
+2. be carried up by a **hammer**,
+3. roll  down another **ramp**,
+4. go down a bathtub **drain**,
+5. land on a **lever** which
+6. sends a diver into a **basin** which then
+7. causes the **trap** to descend.
+
+Suppose you can model the success of each component as independent Bernoulli random variables $X_1$ through $X_7$, where the probability of $X_i$ succeeding is $.90$ for each component (this is an arbitrary probability for this HW problem). 
+
+a. What is the probability that the trap works correctly from beginning to end?
+```{r}
+execution_prob = (0.9)^7
+execution_prob
+```
+
+b. If you attempt the trap 15 times during a game, how many times do you expect it to work correctly from beginning to end?
+```{r}
+execution_x = execution_prob * 15
+execution_x
+```
+
+c. Suppose you let the marble go: Let $Y$ be the number of components of the trap that work in a row. If one component fails, then you stop counting. Calculate the probability mass function of $Y$. *Hints: $Y$ can have values $0, 1, 2, 3, 4, 5, 6$ or $7$. This is like a Geometric r.v. except it does not have infinite support. How can you use this fact to determine the pmf? Be careful: what is a 'success' in this context?*
+```{r}
+# P(Y = 0) = 0.1
+# P(Y = 1) = (0.9) * 0.1 or 0.09
+# P(Y = 2) = (0.9^2) * 0.1 or 0.081
+# P(Y = 3) = (0.9^3) * 0.1 or 0.0729
+# P(Y = 4) = (0.9^4) * 0.1 or 0.06561
+# P(Y = 5) = (0.9^5) * 0.1 or 0.05905
+# P(Y = 6) = (0.9^6) * 0.1 or 0.05314
+# P(Y = 7) = (0.9^7) or 0.4783
+trap_prob = c(0.1, 0.09, 0.081, 0.0729, 0.06561, 0.05905, 0.05314, 0.4783)
+trap_prob
+```
+
+
+d. Calculate the expected value of $Y$ and its variance. 
+```{r}
+exp_trap = sum(trap_prob * 0:7)
+exp_trap
+```
+```{r}
+var = sum(trap_prob * (0:7)^2) - exp_trap^2
+var
+```
+
+e. What is $P(Y = 6 | Y \geq 3)$?
+```{r}
+x = trap_prob[7]
+y = sum(trap_prob[4:8])
+
+prob = x / y
+prob
+```
+
+
+## 4. Bayes Rule with backyard animals <small>(9 points, 3 points each)</small>
+
+In my backyard I sometimes see a black squirrel and sometimes a hawk. I see the squirrel roughly 2/3 of days during the year (equal probability year round). I see a hawk 85% of days when the squirrel is present, and 40% of days when the squirrel is not present.
+
+a. Calculate the overall probability that I see only one of the two animals on a given day.
+```{r}
+P_S = 2/3
+x = 0.85
+y = 0.4
+
+P_S_andnotH = P_S * (1 - x)
+P_notS_and_H = (1 - P_S) * y
+P_only_one = P_S_andnotH + P_notS_and_H
+cat("Prob of seeing only one animal:", P_only_one)
+```
+
+b. What is the expected number of days in a year that I would not see either animal?
+```{r}
+P_S = 2/3
+x = 0.85
+y = 0.4
+P_neither = (1- P_S) * (1-y)
+days = 365
+expected_days = P_neither * days
+cat("Expected number of days without seeing either animal:", expected_days)
+
+```
+
+c. I post a really nice photo of the hawk to my social media. What is the probability that the squirrel also visits this day?
+
+```{r}
+P_S = 2/3
+x = 0.85
+y = 0.4
+P_H = (x * P_S) + (y *(1 - P_S))
+P_S_GH = (x * P_S) / P_H
+cat("Prob that the squirrel visits given that the hawk is seen:", P_S_GH)
+```
+

@@ -1,0 +1,208 @@
+---
+title: "Homework 10"
+author: "Farouk Alghazzy"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Problem 1) Quantitative and Categorical Predictors (8 points)
+
+(This problem is based on a plot from [The behavior of different clays subjected to a fast-drying cycle for traditional ceramic manufacturing](https://doi.org/10.1016/j.jksues.2022.05.003), but the data has been simulated)
+
+An experiment was conducted on three types of **material**: Plastic clay, Sandy clay and claystone. The **plastic deformation** (\%) was measured at various **moisture** (\%) levels. Data is found in the `clay_sample.csv` file. Plastic deformation is denoted `pd` in the dataset.
+
+```{r}
+clay_data = read.csv("C:/Users/algha/OneDrive/Desktop/School/stat340/hw10/clay_sample.csv")
+```
+
+### a) Fit the model (4 points)
+Create a linear model model predicting plastic deformation from moisture. Include material and the interaction between material and moisture. 
+```{r}
+model = lm(pd ~ moisture * material, data = clay_data)
+```
+
+a.i. Output the standard model summary using `summary()`. 
+```{r}
+summary(model)
+```
+  
+a.ii. Interpret the $R^2$ statistic value in one sentence. The R^2 value of .8776 indicates that approximately 87.76% of the variability in pd is explained by the model, which includes moisture, material type, and their interaction.
+
+a.iii. Which material represents the baseline? Claystone
+
+a.iv. Explain how the residual standard error degrees of freedom is related to sample size and the model size. Higher DF residual means the denominator in the RSE formulas increases, which reduces RSE, also meaning a larger sample size. A smaller residual means larger model size.
+
+### b) Interpret coefficient 1 (1 pt)
+Provide an interpretation for the value of the coefficient of moisture, and comment on its significance. 7.7928 is the estimate for moisture. If there was a 7.7928 increase in plastic deformation, there would be a 1 increase for moisture. moisture is also significant because of its minuscule p value
+
+### c) Interpret coefficient 2 (1 pt)
+Provide an interpretation for the value of the coefficient of one of the materials, and comment on its significance. Plastic clay estimate is 23.9557 meaning that if moisture is held constant, the difference between Plastic clay and claystone is 23.9557. This p value is .076355 > .05 so it is not statistically significant
+
+### d) Interpret coefficient 3 (1 pt)
+Provide an interpretation for the value of the coefficient of one of the interaction terms, and comment on its significance. materialplastic clay has an estimate of -3.5950 meaning the slope of the regression line for moisture decreases by 3.595 units when the material is Plastic clay
+
+### e) Assess assumptions (1 pt)
+Finally display the first two diagnostic plots using `plot(<YOUR MODEL>, which=1:2)` and discuss three of the assumptions of the linear model: normality of error term, linearity and the relationship, and constant variance of the error term. You do not have to do any more modeling after this step, but comment about what you *might* want to do to improve the model.
+```{r}
+plot(model, which = 1:2)
+```
+The residuals are randomly scattered around 0 in the residual vs fitted plot so it should be linear. It also should be normal because the residuals follow a straight line on the Q-Q residual plot.
+
+
+## Problem 2) Using Multiple regression to fit nonlinear data (8 points; 2 pt each)
+
+Open the dataset `multData.csv`. This data set consists of three predictor variables, simply named `X1`, `X2` and `X3`. The response variable is `Y`. In this problem you will explore how to use the multiple regression model to model nonlinear relationships.
+```{r}
+multdata = read.csv("C:/Users/algha/OneDrive/Desktop/School/stat340/hw10/multData.csv")
+```
+
+### a) the first model
+
+First we will explore the relationship between $Y$ and the first two predictors $X1$ and $X2$. Fit the linear model
+
+$$Y = /beta_0 + \beta_1 X_1 + \beta_2 X_2 + \epsilon$$
+Interpret the coefficients of both X1 and X2. 
+```{r}
+model1 = lm(Y ~ X1 + X2, data = multdata)
+summary(model1)
+```
+X1 coeff is -12.6318. Which means X1 had an effect of -12.6318 on Y when x2 is constant x2 coeff is -35.1420 which means that X2 had an effect of -35.1420 on Y when X1 is constant
+
+### b) Investigating interaction of quantitative predictors
+
+Next introduce an interaction term to the model
+$$Y = \beta_0 + \beta_1 X_1 + \beta_2 X_2 + \beta_3 X_1\cdot X_2 + \epsilon$$
+
+Fit the model and view the summary output. Has this improved the model fit? Did anything surprising happen to the coefficients? Try to explain what happened.
+```{r}
+model2 = lm(Y ~ X1 * X2, data = multdata)
+summary(model2)
+```
+
+### c) Introducing the last predictor
+
+Next fit a model that introduces the `X3` variable. 
+
+$$Y = \beta_0 + \beta_1 X_1 + \beta_2 X_2 + \beta_3 X_1\cdot X_2  + \beta_4 X_3 \epsilon$$
+Has the model fit improved? In what way (Justify your answer)? 
+```{r}
+model3 = lm(Y ~ X1 * X2 + X3, data = multdata)
+summary(model3)
+```
+This a better fit because the R^2 value is much higher at .9998
+
+### d) Considering higher order terms
+
+Finally explore higher order terms for the X3 variable: Introduce $X_3^2$, $X_3^3$ etc and determine if any of these higher order terms are justified in the model. Explain your reasoning and present your final model. Look at the diagnostic plots and discuss whether the assumptions of the multiple regression model seem to be justified.
+```{r}
+model4 = lm(Y ~ X1 * X2 + poly(X3, 1, raw = TRUE), data = multdata)
+summary(model4)
+```
+```{r}
+par(mfrow = c(2, 2))
+plot(model4)
+```
+Only the (x3)1 term is justified because it is statistically significant, the other two are not. The assumptions do seem to be justified seeing that the residuals form a straight line on the Q-Q residual plot, meaning normality. The scattered residuals on the fitted plot show linearity, so the model of multiple regression looks good.
+
+## Problem 3) Blood Pressure Data (8 points, 2 pts each)
+
+Some researchers observed the following data (`bloodpress.txt`) on 20 individuals with high blood pressure:
+
+- blood pressure (y = BP, in mm Hg)
+- age (x1 = Age, in years)
+- weight (x2 = Weight, in kg)
+- body surface area (x3 = BSA, in sq m)
+- duration of hypertension (x4 = Dur, in years)
+- basal pulse (x5 = Pulse, in beats per minute)
+- stress index (x6 = Stress)
+
+The researchers were interested in determining if a relationship exists between blood pressure and age, weight, body surface area, duration, pulse rate and/or stress level. *Note: You can use `read.table()` to read .txt datafiles into R.
+```{r}
+bp_data = read.table("bloodpress.txt", header = TRUE)
+```
+
+a. Which predictor variables are most strongly correlated with BP? Give the top 3 predictors and their sample correlation coefficient's (Pearson's r). 
+```{r}
+correlations = cor(bp_data)
+
+bp_corrs = correlations["BP", -which(colnames(correlations) == "BP")]
+
+top3 = sort(abs(bp_corrs), decreasing = TRUE)[1:3]
+top3
+```
+1. Weight: r = 0.9501
+2. BSA: r = .8659
+3. Pulse: r = .7214
+b. Fit a linear model predicting blood pressure from two predictors: `BSA` and `Weight`. State the coefficients and provide a 1 sentence interpretation for the coefficient of BSA
+```{r}
+model_bw = lm(BP ~ BSA + Weight, data = bp_data)
+summary(model_bw)
+```
+For each additional square meter in BSA, blood pressure increases by approximately 5.83 mm Hg in blood pressure. This effect is not statistically significant (p = .350)
+c. Now fit a linear model predicting blood pressure from only `BSA`. Provide the same interpretation of the `BSA` coefficient.
+```{r}
+model_bsa = lm(BP ~ BSA, data = bp_data)
+summary(model_bsa)
+```
+For each square meter increase in BSA, blood pressure increases approximately by 12.5 mm Hg, and this effect is statistically significant (p < .05) 
+d. How can you explain the difference in the coefficients for the models you've fit? You should use some statistics to justify your answer. Knowing this, what is the big problem with the interpretation made in part b?
+The large change in BSA's coefficient and its loss of significance in the model with weight indicates multicollinearity, which makes individual coefficients unreliable and misleading to interpret casually.
+
+
+## Problem 4) Transformations (6 points)
+
+We'll look some real estate data. The data file `duke_forest.csv` contains sale prices of 98 homes sold in Duke Fores, a neighborhood of Durham, NC in November 2020.
+```{r}
+duke_data = read.csv("C:/Users/algha/OneDrive/Desktop/School/stat340/hw10/duke_forest.csv")
+```
+
+a. (1 point) Fit a model predicting price based on area. Identify any potential problems with model assumptions using diagnostics. Also provide an interpretation of both the intercept and the slope. If not appropriate explain why.
+```{r}
+model_a = lm(price ~ area, data = duke_data)
+summary(model_a)
+
+par(mfrow = c(2, 2))
+plot(model_a)
+```
+For each additional sq ft of area, the sale price increases by approximately $159.48, on average. The intercept is 116,652.33, which represents the predicted price of a home with 0 sq ft of area (since a home cannot have 0 area, this intercept is not meaningful)
+
+b. (1 point) Now do the same thing but instead log-transform the response variable. Assess the diagnostic plots and identify if there are any problems. Also provide interpretations for the intercept and slope (again - if appropriate). If not meaningful explain wy.
+```{r}
+model_b = lm(log(price) ~ area, data = duke_data)
+summary(model_b)
+
+par(mfrow = c(2, 2))
+plot(model_b)
+```
+
+c. (1 point) Now apply a "mean centering" transformation on the area variable:
+$$area_{centered} = area - mean(area)$$
+Repeat the same model as in part a, but this time use centered area as the predictor. Provide an interpretation of the intercept and slope as before for this new model.
+```{r}
+duke_data$area_centered <- duke_data$area - mean(duke_data$area)
+model_c <- lm(price ~ area_centered, data = duke_data)
+summary(model_c)
+```
+For each additional sq fr above the average area, the sale price increases by approximately $159.48 on average. The intercept of 559,898.67 now represents the predicted sale price of a home with average area. 
+
+d. (1 point) Summarize the pros and cons of these two transformations on the regression model.
+Log response:
+Pros — stabilizes variance and helps with skewed data.
+Cons — makes it harder to interpret results directly in dollar terms.
+
+Mean centering:
+Pros — makes the intercept meaningful and improves interpretation in models with interactions.
+Cons — does not affect model fit or reduce multicollinearity by itself.
+
+e. (2 points) Knowing everything you now know about multiple regression, try to build a good model to predict price (or a transformed version of price) from 4 of the predictor variables. Fit your model, assess the diagnostics and discuss the pros and cons of your model. What does it do well and what does it not do so well?
+```{r}
+model_e = lm(log(price) ~ area + bed + bath + year_built, data = duke_data)
+summary(model_e)
+
+par(mfrow = c(2, 2))
+plot(model_e)
+```
+This model does a decent job explaining variability in house prices, with area and number of bathrooms as meaningful predictors. However, the predictive power is moderate, and interpretation in dollar terms is less intuitive due to the log transformation

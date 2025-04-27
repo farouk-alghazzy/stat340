@@ -1,0 +1,271 @@
+---
+title: "Homework 9"
+author: "Farouk Alghazzy"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo=T,eval=T,message=F,warning=F,fig.align='center')
+library(tidyverse)
+```
+
+
+## Problem 1: Height and Max Driving Speed Revisited (6 points, 1 point each)
+
+You looked at this dataset last homework. Now we're going to revisit it and see what a model including both predictors tells us.
+
+1325 UCLA students were asked to fill out a survey where they were asked about their height (inches), fastest speed they have ever driven (miles per hour), and gender. Here we will focus only on the fastest speed and the height.
+
+The dataset can be downloaded [here](https://vincentarelbundock.github.io/Rdatasets/csv/openintro/speed_gender_height.csv). The dataset will need to be cleaned a little bit before you can fit a good model. Removing some rows of data will not greatly affect conclusions since there are so many rows.
+
+```{r}
+speed_height = read.csv('https://vincentarelbundock.github.io/Rdatasets/csv/openintro/speed_gender_height.csv')
+speed_height <- speed_height[complete.cases(speed_height) & speed_height$speed >0,-1]
+```
+
+### a) Review
+In Homework 8 you fit a simple linear model $\hat{maxSpeed}=\beta_0 + \beta_1 height + \epsilon$. Summarize what you concluded about the relationship between height and max Speed. In particular, is the relationship statistically significant?
+Height is a statistically significant predictor of fastest driving speed due to the extremely low p-value. Despite being statistically significant, height only explains roughly 7% of the variability in speed, so it's not a strong practical predictor.
+### b) Scatter plot
+Create a scatter plot showing max speed (y variable) and height (x variable) but color each point according to gender. What observation can you make now that the points are distinguished?
+```{r}
+speed_height <- read.csv("https://vincentarelbundock.github.io/Rdatasets/csv/openintro/speed_gender_height.csv")
+speed_height <- speed_height[complete.cases(speed_height) & speed_height$speed > 0, ]
+
+library(ggplot2)
+
+ggplot(speed_height, aes(x = height, y = speed, color = gender)) +
+  geom_point(alpha = 0.6) +
+  labs(title = "Max Speed vs Height by Gender",
+       x = "Height (inches)",
+       y = "Max Driving Speed (mph)",
+       color = "Gender") +
+  theme_minimal()
+```
+Once points are colored by gender, it may become clear that males tend to be both taller and report higher max speeds than females. This suggests that gender could be a confounding variable in the relationship between height and speed
+
+### c) Fitting the model
+```{r}
+model2 <- lm(speed ~ height + gender, data = speed_height)
+
+summary(model2)
+```
+
+Now fit a multiple linear model predicting `speed` from two predictors: `height` and `gender`. Look at the summary output. Is the `height` predictor statistically significant? Has its coefficient changed from the simple linear model?
+
+Yes the height predictor is statistically significant. The pvalue for height is extremely small. That means height remains statistically significant even after controlling for gender. Adding gender reduced the estimated effect of height on max speed. This suggests that part of the effect of height in the simple model was due to gender differences (since males tend to be taller and report higher speeds). Once gender is controlled for, height still matters, but less.
+
+### d) Interpreting coefficients
+Give a one sentence interpretation of the coefficient of `height` and the coefficient of the `gender` indicator variable in the model. 
+
+For height: for each additional inch in height, the predicted max driving speed increases by approximately 0.86 mph, holding gender constant. 
+For gender: males are predicted to drive approixmately 5.25 mph faster than females, holding height constant. 
+
+### e) Assessing assumptions
+
+Produce diagnostic plots to assess the zero mean (linearity), constant variance and normality assumptions. Do you see any evidence that any of these assumptions are violated?
+```{r}
+par(mfrow = c(2, 2))  
+plot(model2)
+```
+There is no major evidence of assumption violations. Linearity, constant variance, and normality all appear reasonably satisfied, with only minor deviations that are not concerning for this sample size.
+
+### f) Conclusions
+
+If you did everything right you should see a big change in the interpretation of the linear model when gender is included. Take some time to discuss why this is different and whether it is actually reasonable that a person's height might actually have a causal effect on their max driving speed (we know we cannot prove causation, but you can make some reasonable conclusions based on this model).
+
+When gender is included in the model, the coefficient for height decreases substantially, showing that much of the initial association between height and max driving speed was actually due to gender differences—since males tend to be taller and report driving faster. This suggests that height alone may not have a causal effect on speed; rather, gender is a confounding variable. While we cannot prove causation from this model, it is not reasonable to conclude that height itself directly causes someone to drive faster—gender explains more of the variability in speed than height does.
+
+## Problem 2: More regression with `mtcars` (6 points, 1pt each)
+
+In lecture, we worked briefly with the `mtcars` data set.
+Let's get more regression practice by working with it some more.
+
+### a) background
+
+Run `?mtcars` in the console (please __do not__ add it to this `Rmd` file) and briefly read the help page.
+Specifically, take note of the following:
+
+1. What is the source of this data? 1974 Motor Trend US magazine
+2. What is this data set measuring (i.e., what was the response variable in the original study, at least based on the brief description in the R documentation)? The data measures the fuel consumption in mpg of 32 automobiles.
+3. What predictors are available and what do they mean? There are ten predictors available that all comprise other aspects of automobile design and performance, including number of cylinder, displacement, gross horsepower, rear axle ratio, weight, 1/4 mile time, engine shape, transmission, number of forward gears, and number of carburetors.
+
+You may want to also run `head(mtcars, 10)` or `View(mtcars)` to inspect the data frame briefly before moving on.
+```{r}
+head(mtcars, 10)
+view(mtcars)
+```
+
+### b) Fitting a model
+
+Use `lm` to run a regression of `mpg` on a few predictors in the data frame (choose two or three that you think would make a good model -- don't use all ten; we'll talk about why in later lectures). Save your fitted model as an object called `lm.mtcars`.
+Make sure to include `data = mtcars` as a keyword argument to `lm` so that R knows what data frame to use.
+```{r}
+lm.mtcars = lm(mpg ~ 1 + hp + wt + vs, data = mtcars)
+plot(lm.mtcars, ask = F, which = 1:2)
+```
+
+Briefly inspect the residuals plot by running `plot(lm.mtcars,ask=F,which=1:2)`.
+What do you observe, and what does it mean?
+
+I observe a non-linear trend in the data, which means that it must not align with the chosen model, which IS linear. To make it more accurate, we may need to add some squared terms.
+
+### c) Interpreting the model
+
+View the summary of your model by uncommenting and running the code below.
+```{r}
+summary(lm.mtcars)
+```
+
+Pick one of your predictors and give an interpretation of the estimate and standard error for its coefficient.
+Be careful in your wording of the interpretation.
+
+My chosen predictor is weight. For each additional 1000 lbs in weight (wt), the model predicts that miles per gallon (mpg) will decrease by about 3.78 mpg, holding horsepower and engine shape constant. The standard error for this estimate is 0.63985, which tells us how much uncertainty there is around that coefficient.
+
+Which coefficients are statistically significantly different from zero? How do you know?
+
+Gross horsepower and weight are statistically significantly different from zero because both of their p-values fall below the 0.05 threshold.
+
+### d) Interpreting residuals
+
+What is the Residual Standard Error (RSE) for this model? How many degrees of freedom does it have?
+
+Residual standard error: 2.592 on 28 degrees of freedom
+
+What is the value of $R^2$ for this model? (__Hint:__ look at the output of `summary`) Give an interpretation of this value.
+
+About 83.3% of the variability in miles per gallon (mpg) is explained by the predictors hp, wt, and vs in the model. This indicates a very strong fit — the model explains most of the variation in fuel efficiency across the cars in the data set.
+
+### e) Adjusted $R^2$
+
+Briefly read about the adjusted $R^2$ [here](https://www.statisticshowto.com/probability-and-statistics/statistics-definitions/adjusted-r2/).
+What is the adjusted $R^2$ of this model and how does this differ from the usual $R^2$ value? (__Hint:__ again, look at the output of `summary`).
+
+The adjusted R^2 of this model is .815. The usual R^2 = .8329 measures how much variance in the response (mpg) is explained by the model. The adjusted R^2 gives a more honest estimate of model performance, especially when comparing models with different numbers of predictors. The adjusted R-squared value will always be less than or equal to the regular R-squared value.
+
+### f) CIs for coefficients
+
+Read the documentation for the `confint` function, and use it to generate $95\%$ confidence intervals for the coefficients of your model.
+Give an interpretation of these confidence intervals.
+
+```{r}
+confint(lm.mtcars, level = 0.95)
+```
+The true value of my model’s coefficients will fall in the above intervals with 95% confidence.
+
+
+## Problem 3: Income by US State (10 points, 2 pts each)
+
+The `state.x77` dataset in R has some 1974 demographic data related to the 50 states of the United States of America. In particular one variable recorded is the per capita income. Read about the variables in the dataset by running the code `?state.x77`.
+
+You will need to convert the data matrix into a data frame to fit a linear model. Run this line of code:
+```{r}
+stateData <- data.frame(state.x77)
+```
+
+Choose `HS Grad` and 3 of the other variables to use as predictors of income. Fit a multiple regression model and report the following:
+```{r}
+model <- lm(Income ~ HS.Grad + Illiteracy + Murder + Frost, data = stateData)
+summary(model)
+```
+
+### a) Coefficient of Determination 
+What is the $R^2$ of your model. Interpret this statistic in a single sentence.
+About 40.3% of the variability in per capita income across US states is explained by th model, which includes high school graduation rate, illiteracy rate, murder rate, and average number of frost days.
+### b) Overall Fit Test
+State the "overall fit" hypotheses, report the $F$ statistic and its $p$-value, and state your conclusion in a succinct sentence.
+Null: none of the predictors are related to income—all regression coefficients are zero.
+Alternative: at least one predictor is related to income.
+F statistic: 7.594
+p-value: 9.169e-05
+Since the p-value is much less than .05, we reject the null. This indicates that the model as a whole is statistically significant, and at least one predictor helps explains variation in income. 
+### c) Model Assumptions
+Evaluate the model assumptions using appropriate diagnostic plots.
+```{r}
+par(mfrow = c(2, 2))
+plot(model)
+```
+The residuals appear randomly scattered, suggesting linearity is satisfied. The Q-Q plot shows slight deviation from normality in the tails, but is generally acceptable. There is no clear pattern in the Scale-Location plot, suggesting constant variance. No points fall far outside the Cook’s distance lines, so there is no strong evidence of influential outliers. Most assumptions (linearity, constant variance, and normality) appear reasonably satisfied. There may be some influence from Alaska, but no clear evidence of widespread violations. The model is generally well-behaved.
+
+### d) Significant Predictors
+Which of the predictors do you have statistical evidence are true predictors of Income?
+HS.Grad (hs graduation rate) which has a p-value of .0004. This provides strong statistical evidence that it is a true predcitor of income. 
+### e) Interpreting the coefficient
+Provide a one sentence interpretation of the coefficient of HS.Grad in your model.
+For each one percentage point increase in high school graduation rate, the model predicts an increase of approximately $44.97 in per capita income, holding illiteracy, murder rate, and frost constant.
+
+
+
+
+## Problem 4: the `cats` data set (8 points; 2pt each)
+
+The `cats` data set, included in the `MASS` library, contains data recorded from 144 cats.
+Each row of the data set contains the body weight (`Bwt`, in kgs), heart weight (`Hwt`, in grams) and the sex (`Sex`, levels `'F'` and `'M'`) for one of the cats in the data set.
+
+```{r}
+library(MASS)
+head(cats)
+```
+
+### a) plotting the data
+
+Create a scatter plot showing heart weight on the y-axis and body weight on the x-axis.
+Ignore the `Sex` variable in this plot.
+```{r}
+ggplot(cats, aes(x = Bwt, y = Hwt)) + 
+    geom_point()
+```
+
+Briefly describe what you see. Is there a clear trend in the data?
+There seems to be a positive linear trend in the data.
+
+### b) fitting a linear model
+
+Fit a linear regression model to predict cat heart weight from cat body weight (and using an intercept term, of course).
+```{r}
+weight_lm = lm(Hwt ~ 1 + Bwt, data = cats)
+summary(weight_lm)
+```
+
+Examine the coefficients of your fitted model.
+What is the coefficient for the `Bwt` variable?
+Interpret this coefficient-- a unit change in body weight yields how much change in heart weight?
+
+The coefficient for the Bwt variable is 4.0341, which means that a unit change in body weight will yield that much change in heart weight.
+
+
+### c) back to plotting
+
+Create the same plot from Part a above, but this time color the points in the scatter plot according to the `Sex` variable.
+You may use either `ggplot2` or the built-in R plotting tools, though I would recommend the former, for this.
+```{r}
+ggplot(cats, aes(x = Bwt, y = Hwt, color = Sex)) + 
+    geom_point()
+```
+
+You should see a clear pattern. Describe it. A sentence or two is fine here.
+
+In this graph, females are clustered at smaller average heart and body weights, whereas males are far more spread out.
+
+
+
+### d) adding `Sex` and an interaction
+
+From looking at the data, it should be clear that the `Sex` variable has explanatory power in predicting heart weight, but it is also very correlated with body weight.
+
+Fit a new linear regression model, still predicting heart weight, but this time including both body weight and sex as predictors *and* an interaction term between body weight and sex. 
+```{r}
+weight_v2_lm = lm(Hwt ~ 1 + Bwt + Sex + Bwt:Sex, data = cats) 
+summary(weight_v2_lm)
+```
+
+*To add an interaction term to the model use the `Bwt:Sex` notation as a model term.*
+
+Take note of how R assigns `Sex` a dummy encoding.
+
+Examine the outputs of your model.
+In particular, note the coefficients of `Sex` and the interaction between `Bwt` and `Sex`.
+Are both of these coefficients statistically significantly different from zero?
+How do you interpret the interaction term?
+
+Yes, both of these coefficients are statistically significantly different from zero because their p-values are less than 0.05. The interaction term indicates that the effect of body weight changes by 1.6763 when the sex is M rather than F, meaning it reflects the unique impact of sex on body weight.
